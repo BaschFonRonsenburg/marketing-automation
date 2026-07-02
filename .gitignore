@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.tmp/*
+!.tmp/.gitkeep
+.venv/
+venv/
+streamlit.pid
+streamlit_err.log
+streamlit_out.log
