@@ -58,10 +58,10 @@ Neither draft is ever auto-sent. This tool only produces drafts for human review
 
 ## Future Extension
 If this is later wired into an automated pipeline (e.g., batch-processing a
-lead list), an "Agent" (per CLAUDE.md's WAT pattern) can call
-`tools/scrape_business_site.py` and `tools/generate_outreach.py` directly in
-sequence without any changes to those scripts — only the orchestration layer
-changes (from this Streamlit UI to a script/agent loop).
+lead list), an orchestrator can call `tools/scrape_business_site.py` and
+`tools/generate_outreach.py` directly in sequence without any changes to
+those scripts — only the orchestration layer changes (from this Streamlit UI
+to a script/pipeline loop).
 
 ## Lessons Learned
 _(Update this section as real usage surfaces quirks — rate limits, sites that

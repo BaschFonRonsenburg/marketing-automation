@@ -4,8 +4,6 @@ A Streamlit app for live client calls: enter a prospect's business name/URL,
 it scrapes their own public site for context, and drafts a personalized cold
 outreach email and social post with Claude. A second tab showcases case studies.
 
-Built on the WAT framework (Workflows, Agents, Tools) — see [`CLAUDE.md`](CLAUDE.md).
-
 ## Setup
 
 1. Install dependencies:
