@@ -1,0 +1,644 @@
+{
+  "name": "Competitive Edge Campaign Builder",
+  "nodes": [
+    {
+      "name": "Campaign Request Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "path": "competitive-edge",
+        "formTitle": "Competitive Edge — Campaign Builder",
+        "formDescription": "Enter a company and get a competitor gap analysis plus a ready-to-post ad campaign, emailed to you within a few minutes.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Company website URL",
+              "placeholder": "https://example.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company name",
+              "placeholder": "(optional) leave blank to auto-detect",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Target audience",
+              "fieldType": "textarea",
+              "placeholder": "(optional) who the campaign should speak to",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Your name / brand",
+              "placeholder": "(optional) shown as 'prepared by'",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Notify email",
+              "fieldType": "email",
+              "placeholder": "where to send the report",
+              "requiredField": false
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "formSubmittedText": "Thanks! Your Competitive Edge report is being generated and will land in your inbox in a few minutes."
+        }
+      }
+    },
+    {
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Normalize Input — n8n Code node (Run Once for All Items)\n// Cleans the form submission: extracts a hostname from almost any input\n// (bare domain, www, protocol-relative //, full URL, trailing slashes) without\n// relying on new URL() — which can be strict/inconsistent in the sandbox.\nconst f = $json;\n\nfunction pick(...names) {\n  for (const n of names) {\n    if (f[n] != null && String(f[n]).trim() !== '') return String(f[n]).trim();\n  }\n  return '';\n}\n\nconst raw = pick('Company website URL', 'Company website', 'companyUrl', 'url', 'Website');\nif (!raw) throw new Error('Please enter the company website (for example: boscoffee.com).');\n\n// Strip an optional scheme + any leading slashes, then a leading \"www.\".\nlet cleaned = raw.replace(/^\\s*(https?:)?\\/+/i, '').replace(/^www\\./i, '');\n// Host = everything up to the first slash / query / hash / whitespace.\nconst host = cleaned.split(/[\\/?#\\s]/)[0].toLowerCase();\n\nif (!host || !host.includes('.')) {\n  throw new Error('That does not look like a website: \"' + raw + '\". Try something like boscoffee.com');\n}\n\nconst companyUrl = 'https://' + host;\nconst companyLabel = pick('Company name', 'companyName')\n  || host.split('.')[0].replace(/[-_]+/g, ' ').replace(/\\b\\w/g, (c) => c.toUpperCase());\n\nreturn [{\n  json: {\n    companyUrl,\n    companyHost: host,\n    companyLabel,\n    audience: pick('Target audience', 'audience') || \"the company's core customers\",\n    senderName: pick('Your name / brand', 'Your brand', 'senderName') || 'AI Automation',\n    notifyEmail: pick('Notify email', 'email') || 'you@example.com',\n  },\n}];\n"
+      }
+    },
+    {
+      "name": "Fetch Company Site",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.companyUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "CompetitiveEdgeBot/1.0 (+https://n8n.io; contact: sales-demo)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 12000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1500,
+      "alwaysOutputData": true
+    },
+    {
+      "name": "Clean Company Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Clean Company Text — n8n Code node (Run Once for Each Item)\n// Strips a fetched HTML page down to visible text (regex port of the\n// BeautifulSoup logic in the old scrape_business_site.py).\nconst MAX = 4000;\n\nfunction htmlToText(html) {\n  if (!html || typeof html !== 'string') return '';\n  return html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')\n    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, ' ')\n    .replace(/<(nav|footer|header)[\\s\\S]*?<\\/\\1>/gi, ' ')\n    .replace(/<!--[\\s\\S]*?-->/g, ' ')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\")\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\n// httpRequest (response format = text) puts the body in $json.data\nconst body = $json.data || $json.body || '';\nconst text = htmlToText(body).slice(0, MAX);\n\nreturn [{\n  json: {\n    companyText: text,\n    companyTextChars: text.length,\n    thin: text.length < 150,\n  },\n}];\n"
+      }
+    },
+    {
+      "name": "Company Profile",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a market analyst. From the company's own website text below, identify what the business actually is and craft a web-search query that will surface its DIRECT competitors.\n\nCompany (as entered): {{ $('Normalize Input').item.json.companyLabel }}\nWebsite: {{ $('Normalize Input').item.json.companyUrl }}\n\nWebsite text:\n\"\"\"\n{{ $json.companyText }}\n\"\"\"\n\nReturn:\n- company_name: the business's real name.\n- industry: a short category (e.g. \"specialty coffee roaster\", \"boutique fitness studio\", \"B2B payroll SaaS\").\n- location: city/region if discernible from the text, otherwise an empty string.\n- search_query: a short, literal Google query that returns SIMILAR competitors, not this company. Prefer the form \"<category> in <location>\" when a location exists, otherwise \"<category> companies\" or \"best <category>\". Do not include the company's own name.\n\nIf the website text is empty or unhelpful, infer the best you can from the company name and URL.",
+        "hasOutputParser": true
+      }
+    },
+    {
+      "name": "DuckDuckGo Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://html.duckduckgo.com/html/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.output.search_query }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.9"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1500,
+      "alwaysOutputData": true
+    },
+    {
+      "name": "Extract Competitors",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Extract Competitors — n8n Code node (Run Once for All Items)\n// Parses DuckDuckGo HTML results (keyless search) into a clean, deduped\n// competitor list (max 3), filtering out the company's own domain and\n// non-competitor aggregator/directory sites. Emits ONE ITEM PER COMPETITOR\n// so the next HTTP node scrapes each in turn.\nconst norm = $('Normalize Input').first().json;\nconst ownHost = (norm.companyHost || '').toLowerCase();\n\n// The DuckDuckGo HTML page arrives as a string (httpRequest responseFormat=text).\nconst htmlBody = $json.data || $json.body || '';\n\nconst BLOCK = [\n  'yelp.', 'facebook.', 'instagram.', 'tripadvisor.', 'wikipedia.', 'reddit.',\n  'youtube.', 'linkedin.', 'amazon.', 'google.', 'maps.', 'doordash.', 'ubereats.',\n  'grubhub.', 'opentable.', 'foursquare.', 'mapquest.', 'bbb.org', 'indeed.',\n  'glassdoor.', 'pinterest.', 'tiktok.', 'x.com', 'twitter.', 'apple.',\n  'duckduckgo.', 'bing.', 'yellowpages.', 'thumbtack.', 'angi.', 'nextdoor.',\n];\n\nfunction hostOf(u) {\n  try { return new URL(u).hostname.replace(/^www\\./, '').toLowerCase(); }\n  catch (e) { return ''; }\n}\n\n// DuckDuckGo wraps every result link as //duckduckgo.com/l/?uddg=<encoded real url>&...\n// Decode uddg back to the real destination; fall back to any absolute http link.\nfunction decodeDdg(href) {\n  if (!href) return '';\n  let h = href;\n  if (h.startsWith('//')) h = 'https:' + h;\n  const m = h.match(/[?&]uddg=([^&]+)/);\n  if (m) { try { return decodeURIComponent(m[1]); } catch (e) { return ''; } }\n  return /^https?:\\/\\//i.test(h) ? h : '';\n}\n\n// Pull the result anchors. DDG HTML uses class=\"result__a\" on result title links;\n// be tolerant of attribute order / extra classes.\nconst anchorRe = /<a\\b[^>]*class=\"[^\"]*\\bresult__a\\b[^\"]*\"[^>]*href=\"([^\"]+)\"[^>]*>([\\s\\S]*?)<\\/a>/gi;\nconst stripTags = (s) => String(s || '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&#x27;|&#39;/g, \"'\").replace(/&quot;/g, '\"').replace(/\\s+/g, ' ').trim();\nconst titleToName = (t) => stripTags(t).split(/[|\\-–—:·•]/)[0].trim().slice(0, 60);\n\nconst seen = new Set([ownHost]);\nconst competitors = [];\nlet m;\nwhile ((m = anchorRe.exec(htmlBody)) !== null) {\n  const url = decodeDdg(m[1]);\n  if (!url) continue;\n  const host = hostOf(url);\n  if (!host || seen.has(host)) continue;\n  if (host === ownHost || host.endsWith('.' + ownHost) || ownHost.endsWith('.' + host)) continue;\n  if (BLOCK.some(b => host.includes(b))) continue;\n  seen.add(host);\n  competitors.push({\n    name: titleToName(m[2]) || host.split('.')[0],\n    url: 'https://' + host,\n    host,\n  });\n  if (competitors.length >= 3) break;\n}\n\n// Always return at least one item so the branch runs; mark when empty.\nif (competitors.length === 0) {\n  return [{ json: { name: '', url: '', host: '', _noCompetitors: true } }];\n}\nreturn competitors.map(c => ({ json: c }));\n"
+      }
+    },
+    {
+      "name": "Fetch Competitor Site",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url || 'https://example.com' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "CompetitiveEdgeBot/1.0 (+https://n8n.io; contact: sales-demo)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 12000,
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1500,
+      "alwaysOutputData": true
+    },
+    {
+      "name": "Clean Competitor Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Clean Competitor Text — n8n Code node (Run Once for All Items)\n// Strips each fetched competitor page to visible text. Preserves competitor\n// identity by aligning to Extract Competitors by index (HTTP preserves order),\n// and tolerates dead/empty fetches so one bad site never breaks the run.\nconst MAX = 2500;\n\nfunction htmlToText(html) {\n  if (!html || typeof html !== 'string') return '';\n  return html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')\n    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, ' ')\n    .replace(/<(nav|footer|header)[\\s\\S]*?<\\/\\1>/gi, ' ')\n    .replace(/<!--[\\s\\S]*?-->/g, ' ')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\")\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nconst metas = $('Extract Competitors').all().map(i => i.json);\nconst items = $input.all();\n\nreturn items.map((it, idx) => {\n  const meta = metas[idx] || {};\n  const body = it.json.data || it.json.body || '';\n  const text = htmlToText(body).slice(0, MAX);\n  return {\n    json: {\n      name: meta.name || '',\n      url: meta.url || '',\n      host: meta.host || '',\n      competitorText: text,\n      reachable: text.length >= 120,\n    },\n  };\n});\n"
+      }
+    },
+    {
+      "name": "Aggregate Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Aggregate Context — n8n Code node (Run Once for All Items)\n// Merges the company context with every scraped competitor into a single\n// item + a preformatted text block the Gap Analysis prompt can drop straight in.\nconst norm = $('Normalize Input').first().json;\nconst company = $('Clean Company Text').first().json;\n\nconst items = $input.all().map(i => i.json).filter(c => c && c.name);\nconst competitors = items.filter(c => !c._noCompetitors);\n\nconst reachable = competitors.filter(c => c.reachable);\n\nconst competitorsBlock = competitors.length\n  ? competitors.map((c, i) =>\n      `Competitor ${i + 1}: ${c.name} (${c.url})\\n` +\n      (c.reachable ? c.competitorText : '[site could not be read — infer only from the name/URL]')\n    ).join('\\n\\n---\\n\\n')\n  : 'No competitors could be discovered via web search.';\n\nreturn [{\n  json: {\n    companyLabel: norm.companyLabel,\n    companyUrl: norm.companyUrl,\n    audience: norm.audience,\n    senderName: norm.senderName,\n    notifyEmail: norm.notifyEmail,\n    companyText: company.companyText || '',\n    companyThin: !!company.thin,\n    competitors: competitors.map(c => ({ name: c.name, url: c.url, reachable: !!c.reachable })),\n    competitorCount: competitors.length,\n    reachableCount: reachable.length,\n    competitorsBlock,\n  },\n}];\n"
+      }
+    },
+    {
+      "name": "Gap Analysis",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2640,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a competitive strategy analyst producing a market recon brief for {{ $json.companyLabel }}. Use ONLY the facts in the material below (the company's own site and its competitors' public sites). Never invent specific facts; when a competitor site could not be read, reason cautiously from its name/URL and mark uncertainty by choosing conservative ratings.\n\nTARGET COMPANY: {{ $json.companyLabel }} ({{ $json.companyUrl }})\nIts core audience: {{ $json.audience }}\n\nTARGET COMPANY WEBSITE TEXT:\n\"\"\"\n{{ $json.companyText }}\n\"\"\"\n\nCOMPETITORS (discovered via web search):\n\"\"\"\n{{ $json.competitorsBlock }}\n\"\"\"\n\nProduce a JSON analysis:\n- company_descriptor: one short line describing the company (industry · location · what it does).\n- company_summary: 2-3 sentences on the company's biggest competitive opening — where it is losing ground and the single strongest angle to win. Address the reader as \"you\".\n- limitations: 3-5 concrete gaps where the company trails competitors. Each { title (short bold phrase), detail (one sentence, cite a competitor where possible) }.\n- matrix: a capability comparison.\n  - columns: the competitors IN THE SAME ORDER as listed above, each { name, url }.\n  - rows: 4-6 capabilities relevant to this industry. Each { capability, subject_rating, competitor_ratings }. subject_rating is the target company's rating. competitor_ratings is an array aligned 1:1 with columns. Every rating is exactly one of: \"none\", \"partial\", \"have\".\n- recommendations: 3-5 prioritized moves to beat the market, ordered most-impactful first. Each { title (short bold action), detail (one sentence on how/why) }.\n- positioning_angle: one vivid sentence the marketing campaign should run on.\n- theme: choose the report's visual skin for this industry.\n  - industry: short industry label.\n  - preset_key: EXACTLY one of \"cozy_warm\" (food/drink/hospitality), \"fresh_modern\" (tech/SaaS/startup), \"trust_corporate\" (finance/legal/professional B2B), \"vital_energetic\" (fitness/wellness/DTC), \"earthy_craft\" (artisan/retail/handmade), or \"recon_neutral\" (anything else / unclear).\n  - accent_hex: a 6-digit hex (e.g. \"#a5673f\") that fits the brand, or \"\" to use the preset default.\n  - motif_key: one of \"beans\", \"grid\", \"lines\", \"radar\" matching the vibe.\n  - rationale: a few words on why this skin fits.",
+        "hasOutputParser": true
+      }
+    },
+    {
+      "name": "Campaign Copy",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2880,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You write concise, specific, non-generic marketing copy. Avoid flattery clichés and buzzwords. Ground every asset in the company's real positioning below. Never invent facts. Output copy the company itself would publish to its OWN customers — this is the company's ad campaign, not a cold pitch to the company.\n\nCOMPANY: {{ $('Aggregate Context').item.json.companyLabel }}\nAUDIENCE: {{ $('Aggregate Context').item.json.audience }}\nPOSITIONING ANGLE: {{ $('Gap Analysis').item.json.output.positioning_angle }}\nTOP RECOMMENDED MOVES:\n{{ ($('Gap Analysis').item.json.output.recommendations || []).map(r => '- ' + r.title + ': ' + r.detail).join('\\n') }}\n\nWrite one coordinated campaign built around the positioning angle and (where natural) the #1 recommended move:\n- email: { subject (under 60 chars, specific, no clickbait), body_paragraphs: an array of 5-7 SHORT paragraphs — greeting, 2-3 body lines that reference a concrete detail, one call-to-action line, a closing line, and a sign-off. Each array element is a plain-text paragraph (no HTML). }\n- linkedin: a 60-120 word post in the company's voice.\n- x_post: a single post UNDER 280 characters.\n- instagram_caption: a 40-80 word caption.\n- hashtags: 4-6 relevant hashtags (with or without the leading #).",
+        "hasOutputParser": true
+      }
+    },
+    {
+      "name": "Assemble Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ============================================================================\n// Assemble Report  —  n8n Code node (Run Once for All Items)\n// Builds the final themed HTML email from the analysis + campaign outputs.\n// Industry-adaptive: picks a theme preset from Gap Analysis' `theme.preset_key`,\n// falls back to `recon_neutral` for unknown industries. Motifs are inline SVG\n// (email clients strip external/background images; the themed color always carries).\n// ============================================================================\n\n// ---- pull upstream data (guarded so a partial run still emails something) ---\nconst norm = $('Normalize Input').first().json;\nconst gap = ($('Gap Analysis').first().json.output) || {};\nconst camp = ($('Campaign Copy').first().json.output) || {};\nconst agg = $('Aggregate Context').first().json;\n\nconst competitors = agg.competitors || [];\nconst theme = gap.theme || {};\n\n// ---------------------------------------------------------------------------\n// THEME PRESETS  — each supplies only the tokens that differ; the CSS below is\n// shared. Add presets here to teach the report a new industry look.\n// ---------------------------------------------------------------------------\nconst THEMES = {\n  recon_neutral: {\n    label: 'recon_neutral', motif: 'radar',\n    fonts: {\n      display: \"'Bahnschrift','DIN Condensed','Arial Narrow','Helvetica Neue',sans-serif\",\n      body: \"Georgia,'Sitka Text','Times New Roman',serif\",\n      label: \"'Bahnschrift','DIN Condensed','Segoe UI',sans-serif\",\n    },\n    vars: {\n      ink:'#14203a', inkSoft:'#33405c', muted:'#5a6577', paper:'#f3f5f8', card:'#ffffff',\n      hairline:'#e0e5ec', hairlineStrong:'#cfd6e0', brand:'#0e6e6a', brandDeep:'#0a4f4c',\n      gap:'#c24236', gapBg:'#f9e7e4', watch:'#b3801b', watchBg:'#f7eed9', have:'#2f8f5b', haveBg:'#e4f1e9',\n    },\n    masthead:'linear-gradient(150deg,#101a2c 0%,#16263f 55%,#123634 130%)',\n    mastheadText:'#eef2f7', kicker:'#6fd6cf', kickerRgb:'111,214,207',\n    subjectDesc:'#b9c4d4', metaLabel:'#8ea0b8', metaVal:'#dfe6ef',\n  },\n  cozy_warm: {\n    label: 'cozy_warm', motif: 'beans',\n    fonts: {\n      display: \"'Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif\",\n      body: \"Georgia,'Iowan Old Style','Times New Roman',serif\",\n      label: \"'Trebuchet MS','Segoe UI','Gill Sans',sans-serif\",\n    },\n    vars: {\n      ink:'#2c1e15', inkSoft:'#5a4433', muted:'#8a7563', paper:'#f6efe4', card:'#fffdf8',\n      hairline:'#e7dccb', hairlineStrong:'#d8c9b2', brand:'#a5673f', brandDeep:'#7a4a2b',\n      gap:'#b23a2e', gapBg:'#f6e3de', watch:'#b3801b', watchBg:'#f6ecd6', have:'#5c7a3a', haveBg:'#eaf0dc',\n    },\n    masthead:'linear-gradient(150deg,#2b1d14 0%,#3a2618 55%,#4a2f1a 130%)',\n    mastheadText:'#f4e9da', kicker:'#e0b483', kickerRgb:'224,180,131',\n    subjectDesc:'#d8c3aa', metaLabel:'#b79a7c', metaVal:'#ece0d0',\n  },\n  fresh_modern: {\n    label: 'fresh_modern', motif: 'grid',\n    fonts: {\n      display: \"'Segoe UI Semibold','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif\",\n      body: \"'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif\",\n      label: \"'Segoe UI Semibold','Segoe UI',Roboto,Arial,sans-serif\",\n    },\n    vars: {\n      ink:'#0f1b2d', inkSoft:'#33455f', muted:'#5d6b80', paper:'#f4f7fb', card:'#ffffff',\n      hairline:'#e2e8f1', hairlineStrong:'#cbd5e3', brand:'#2563eb', brandDeep:'#1d4ed8',\n      gap:'#dc2b45', gapBg:'#fbe3e7', watch:'#c2820c', watchBg:'#f8efd7', have:'#16a34a', haveBg:'#dcf3e4',\n    },\n    masthead:'linear-gradient(150deg,#0b1220 0%,#122036 55%,#0b2a4a 130%)',\n    mastheadText:'#eaf1fb', kicker:'#7cc0ff', kickerRgb:'124,192,255',\n    subjectDesc:'#aabbd2', metaLabel:'#8497b3', metaVal:'#dbe6f5',\n  },\n  trust_corporate: {\n    label: 'trust_corporate', motif: 'lines',\n    fonts: {\n      display: \"Georgia,'Times New Roman',serif\",\n      body: \"Georgia,'Times New Roman',serif\",\n      label: \"'Segoe UI','Helvetica Neue',Arial,sans-serif\",\n    },\n    vars: {\n      ink:'#1a2432', inkSoft:'#3a4655', muted:'#606c7c', paper:'#f5f6f7', card:'#ffffff',\n      hairline:'#e3e6ea', hairlineStrong:'#cdd3da', brand:'#9a6b2f', brandDeep:'#7a5323',\n      gap:'#b23a34', gapBg:'#f6e4e2', watch:'#b3801b', watchBg:'#f6ecd8', have:'#3f7a52', haveBg:'#e4efe8',\n    },\n    masthead:'linear-gradient(150deg,#182231 0%,#20304a 55%,#1c2740 130%)',\n    mastheadText:'#eef1f5', kicker:'#d9b481', kickerRgb:'217,180,129',\n    subjectDesc:'#b6c0cd', metaLabel:'#8b97a6', metaVal:'#dde3ea',\n  },\n};\n// Aliases so the LLM has more industry vocabulary than there are hand-built skins.\nTHEMES.vital_energetic = THEMES.fresh_modern;\nTHEMES.earthy_craft = THEMES.cozy_warm;\n\nconst T = THEMES[theme.preset_key] || THEMES.recon_neutral;\n\n// Optional per-company accent tuning from the LLM (kept within the preset).\nconst isHex = (s) => typeof s === 'string' && /^#[0-9a-fA-F]{6}$/.test(s);\nconst brand = isHex(theme.accent_hex) ? theme.accent_hex : T.vars.brand;\n\n// ---------------------------------------------------------------------------\n// MOTIFS — decorative masthead SVG, one per style. Purely additive.\n// ---------------------------------------------------------------------------\nfunction motifSvg(kind, rgb) {\n  const c = `rgb(${rgb})`;\n  if (kind === 'beans') {\n    return `<svg class=\"motif\" viewBox=\"0 0 420 420\" fill=\"none\" aria-hidden=\"true\"><g stroke=\"${c}\" stroke-width=\"1.4\" opacity=\"0.85\">`\n      + `<g transform=\"translate(300,90) rotate(28)\"><ellipse rx=\"26\" ry=\"17\"/><path d=\"M0 -15 C 8 -6,8 6,0 15\"/></g>`\n      + `<g transform=\"translate(360,180) rotate(-14)\"><ellipse rx=\"24\" ry=\"15\"/><path d=\"M0 -13 C 7 -5,7 5,0 13\"/></g>`\n      + `<g transform=\"translate(250,200) rotate(52)\"><ellipse rx=\"22\" ry=\"14\"/><path d=\"M0 -12 C 6 -4,6 4,0 12\"/></g>`\n      + `<g transform=\"translate(330,290) rotate(8)\"><ellipse rx=\"25\" ry=\"16\"/><path d=\"M0 -14 C 7 -5,7 5,0 14\"/></g></g>`\n      + `<g stroke=\"${c}\" stroke-width=\"2\" opacity=\"0.3\" stroke-linecap=\"round\"><path d=\"M120 300 C 138 270,102 250,120 220 C 138 190,102 170,120 140\"/><path d=\"M160 320 C 178 290,142 270,160 240 C 178 210,142 190,160 160\"/></g></svg>`;\n  }\n  if (kind === 'grid') {\n    return `<svg class=\"motif\" viewBox=\"0 0 420 420\" fill=\"none\" aria-hidden=\"true\"><g stroke=\"${c}\" stroke-width=\"1\" opacity=\"0.5\">`\n      + Array.from({length:9}, (_,i)=>`<line x1=\"${i*52}\" y1=\"0\" x2=\"${i*52}\" y2=\"420\"/><line x1=\"0\" y1=\"${i*52}\" x2=\"420\" y2=\"${i*52}\"/>`).join('')\n      + `</g><g fill=\"${c}\" opacity=\"0.9\"><circle cx=\"312\" cy=\"104\" r=\"4\"/><circle cx=\"208\" cy=\"208\" r=\"4\"/><circle cx=\"364\" cy=\"260\" r=\"3\"/></g></svg>`;\n  }\n  if (kind === 'lines') {\n    return `<svg class=\"motif\" viewBox=\"0 0 420 420\" fill=\"none\" aria-hidden=\"true\"><g stroke=\"${c}\" stroke-width=\"0.9\" opacity=\"0.4\">`\n      + Array.from({length:14}, (_,i)=>`<path d=\"M${-40+i*34} 420 C ${60+i*30} 300, ${-20+i*30} 160, ${120+i*24} -20\"/>`).join('')\n      + `</g></svg>`;\n  }\n  // 'radar' default\n  return `<svg class=\"motif\" viewBox=\"0 0 460 460\" fill=\"none\" aria-hidden=\"true\"><g stroke=\"${c}\">`\n    + `<circle cx=\"230\" cy=\"230\" r=\"70\" stroke-width=\"1\"/><circle cx=\"230\" cy=\"230\" r=\"130\" stroke-width=\"1\"/>`\n    + `<circle cx=\"230\" cy=\"230\" r=\"190\" stroke-width=\"1\"/><circle cx=\"230\" cy=\"230\" r=\"250\" stroke-width=\"0.8\"/>`\n    + `<line x1=\"230\" y1=\"0\" x2=\"230\" y2=\"460\" stroke-width=\"0.6\"/><line x1=\"0\" y1=\"230\" x2=\"460\" y2=\"230\" stroke-width=\"0.6\"/></g>`\n    + `<path d=\"M230 230 L230 40 A190 190 0 0 1 390 320 Z\" fill=\"${c}\" fill-opacity=\"0.10\"/></svg>`;\n}\n\n// ---- small helpers ---------------------------------------------------------\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');\nconst RATING = {\n  none:  { cls:'gap',   text:'None' },\n  partial:{ cls:'watch', text:'Partial' },\n  have:  { cls:'have',  text:'Have' },\n};\nconst cell = (r) => {\n  const m = RATING[(r||'').toLowerCase()] || RATING.partial;\n  return `<span class=\"cell ${m.cls}\"><span class=\"dot\"></span>${m.text}</span>`;\n};\n\n// ---- data with fallbacks ---------------------------------------------------\nconst companyLabel = esc(norm.companyLabel || 'Your Company');\nconst companyDesc = esc(gap.company_descriptor || norm.companyUrl || '');\nconst summary = esc(gap.company_summary || 'Analysis summary unavailable.');\nconst positioning = esc(gap.positioning_angle || '');\nconst limitations = Array.isArray(gap.limitations) ? gap.limitations : [];\nconst recommendations = Array.isArray(gap.recommendations) ? gap.recommendations : [];\nconst matrix = gap.matrix || { columns: [], rows: [] };\nconst cols = matrix.columns || [];\nconst rows = matrix.rows || [];\nconst email = camp.email || {};\nconst paras = Array.isArray(email.body_paragraphs) ? email.body_paragraphs : [];\nconst hashtags = Array.isArray(camp.hashtags) ? camp.hashtags : [];\nconst today = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});\nconst len = (s)=> (s? String(s).length : 0);\n\n// ---- matrix html -----------------------------------------------------------\nconst matrixHead = `<tr><th>Capability</th><th class=\"subject-col\">${companyLabel}<span class=\"col-tag\">you</span></th>`\n  + cols.map(c=>`<th>${esc(c.name||c)}<span class=\"col-tag\">${esc(c.url||'')}</span></th>`).join('') + `</tr>`;\nconst matrixBody = rows.map(row => {\n  const compCells = (row.competitor_ratings||[]).map(r=>`<td>${cell(r)}</td>`).join('');\n  return `<tr><td class=\"cap\">${esc(row.capability||'')}</td>`\n    + `<td class=\"subject-col\">${cell(row.subject_rating)}</td>${compCells}</tr>`;\n}).join('');\n\n// ---- render ----------------------------------------------------------------\nconst v = T.vars;\nconst html = `<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Competitive Edge — ${companyLabel}</title>\n<style>\n:root{--ink:${v.ink};--ink-soft:${v.inkSoft};--muted:${v.muted};--paper:${v.paper};--card:${v.card};--hairline:${v.hairline};--hairline-strong:${v.hairlineStrong};--brand:${brand};--brand-deep:${v.brandDeep};--gap:${v.gap};--gap-bg:${v.gapBg};--watch:${v.watch};--watch-bg:${v.watchBg};--have:${v.have};--have-bg:${v.haveBg};--fd:${T.fonts.display};--fb:${T.fonts.body};--fl:${T.fonts.label};--fm:'Consolas','Cascadia Mono',ui-monospace,monospace}\n*{box-sizing:border-box}\nbody{margin:0;background:var(--paper)}\n.doc{background:var(--paper);color:var(--ink);font-family:var(--fb);font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased}\n.wrap{max-width:940px;margin:0 auto;padding:0 24px 72px}\n.eyebrow{font-family:var(--fl);text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:700;color:var(--brand)}\nh2{font-family:var(--fd);font-weight:700;font-size:27px;letter-spacing:.005em;margin:0;color:var(--ink)}\nh3{font-family:var(--fd);font-weight:700;font-size:18px;margin:0;color:var(--ink)}\np{margin:0}\n.masthead{position:relative;overflow:hidden;background:${T.masthead};color:${T.mastheadText}}\n.masthead-inner{position:relative;z-index:2;max-width:940px;margin:0 auto;padding:40px 24px 34px}\n.motif{position:absolute;top:-80px;right:-70px;width:440px;height:440px;z-index:1;opacity:.5;pointer-events:none;fill:none}\n.kicker{font-family:var(--fl);text-transform:uppercase;letter-spacing:.28em;font-size:12px;font-weight:700;color:${T.kicker};margin-bottom:18px;display:flex;align-items:center;gap:12px}\n.kicker::after{content:\"\";flex:1;height:1px;background:linear-gradient(90deg,rgba(${T.kickerRgb},.55),rgba(${T.kickerRgb},0))}\n.subject-name{font-family:var(--fd);font-weight:700;font-size:clamp(34px,6vw,52px);line-height:1.02;margin:0 0 10px}\n.subject-desc{font-size:18px;color:${T.subjectDesc};max-width:54ch;margin-bottom:26px}\n.meta-row{display:flex;flex-wrap:wrap;gap:26px 40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.13)}\n.meta-label{font-family:var(--fl);text-transform:uppercase;letter-spacing:.14em;font-size:10.5px;color:${T.metaLabel};margin-bottom:4px;font-weight:700}\n.meta-val{font-family:var(--fm);font-size:13.5px;color:${T.metaVal}}\nsection{margin-top:50px}\n.sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:22px}\n.sec-head .idx{font-family:var(--fm);font-size:13px;color:var(--brand);padding-top:4px}\n.sec-head .sub{margin-left:auto;font-size:14px;color:var(--muted);font-family:var(--fl);text-align:right}\n.lead{font-size:19px;line-height:1.6;color:var(--ink-soft);max-width:68ch;margin-bottom:26px}\n.tiles{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}\n.tile{background:var(--card);border:1px solid var(--hairline);border-radius:12px;padding:18px 20px}\n.t-num{font-family:var(--fd);font-weight:700;font-size:34px;line-height:1;color:var(--ink)}\n.t-num.accent{color:var(--gap)}\n.t-label{margin-top:8px;font-size:13.5px;color:var(--muted)}\n.tile.wide{grid-column:span 2}\n.tile.wide .t-num{font-size:20px;font-family:var(--fb);font-style:italic;color:var(--brand-deep);line-height:1.3}\n.matrix-scroll{overflow-x:auto;border-radius:12px;border:1px solid var(--hairline)}\ntable.matrix{width:100%;border-collapse:collapse;background:var(--card);min-width:620px}\ntable.matrix thead th{font-family:var(--fl);font-size:13px;font-weight:700;text-align:left;padding:15px 16px;color:var(--muted);border-bottom:1px solid var(--hairline-strong);vertical-align:bottom}\ntable.matrix thead th.subject-col{color:var(--ink);border-bottom:2px solid var(--brand)}\n.col-tag{display:block;font-family:var(--fm);font-size:10px;color:var(--brand);text-transform:none;margin-top:3px;font-weight:400}\ntable.matrix tbody td{padding:13px 16px;border-bottom:1px solid var(--hairline);font-size:14px}\ntable.matrix tbody tr:last-child td{border-bottom:none}\ntd.cap{font-family:var(--fb);color:var(--ink)}\ntd.subject-col{background:rgba(0,0,0,.02)}\n.cell{display:inline-flex;align-items:center;gap:7px;font-family:var(--fl);font-weight:600;font-size:12.5px;padding:4px 10px 4px 8px;border-radius:20px;white-space:nowrap}\n.cell .dot{width:8px;height:8px;border-radius:50%;flex:none}\n.cell.gap{background:var(--gap-bg);color:var(--gap)}.cell.gap .dot{background:var(--gap)}\n.cell.watch{background:var(--watch-bg);color:var(--watch)}.cell.watch .dot{background:var(--watch)}\n.cell.have{background:var(--have-bg);color:var(--have)}.cell.have .dot{background:var(--have)}\n.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:14px;font-size:13px;color:var(--muted);font-family:var(--fl)}\n.legend span{display:inline-flex;align-items:center;gap:7px}.legend .dot{width:9px;height:9px;border-radius:50%}\n.split{display:grid;gap:26px;grid-template-columns:1fr 1fr}\n.panel{background:var(--card);border:1px solid var(--hairline);border-radius:12px;padding:24px 26px}\n.panel>h3{margin-bottom:16px}\nul.findings{list-style:none;margin:0;padding:0;display:grid;gap:15px}\nul.findings li{padding-left:20px;position:relative;font-size:15px;line-height:1.5;color:var(--ink-soft)}\nul.findings li::before{content:\"\";position:absolute;left:0;top:9px;width:8px;height:8px;border-radius:2px;background:var(--gap);transform:rotate(45deg)}\nul.findings li b{color:var(--ink)}\nol.recs{list-style:none;margin:0;padding:0;counter-reset:r;display:grid;gap:18px}\nol.recs li{counter-increment:r;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;font-size:15px;line-height:1.5;color:var(--ink-soft)}\nol.recs li::before{content:counter(r,decimal-leading-zero);font-family:var(--fm);font-size:13px;color:var(--brand);font-weight:700;padding-top:2px}\nol.recs li b{color:var(--ink)}\n.positioning{margin-top:26px;border:1px solid var(--hairline);border-left:3px solid var(--brand);border-radius:10px;padding:20px 24px;background:var(--card)}\n.positioning p{font-size:20px;font-style:italic;line-height:1.45;color:var(--ink);margin-top:8px;max-width:60ch}\n.drafts-badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--fl);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--watch);background:var(--watch-bg);border:1px solid var(--watch);border-radius:20px;padding:5px 13px}\n.drafts-badge .pulse{width:7px;height:7px;border-radius:50%;background:var(--watch)}\n.email-card{background:var(--card);border:1px solid var(--hairline);border-radius:12px;overflow:hidden}\n.email-head{padding:16px 24px;border-bottom:1px solid var(--hairline);display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}\n.email-head .lbl{font-family:var(--fl);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}\n.email-head .subj{font-size:18px;font-weight:700;color:var(--ink);font-family:var(--fd)}\n.email-body{padding:22px 24px}\n.email-body p{margin-bottom:13px;color:var(--ink-soft);font-size:15.5px}\n.cta-line{color:var(--brand-deep);font-weight:700;font-style:italic}\n.sig{color:var(--muted);font-size:14.5px}\n.socials{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:16px}\n.social{background:var(--card);border:1px solid var(--hairline);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column}\n.s-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}\n.s-plat{font-family:var(--fl);font-weight:700;font-size:14px;color:var(--ink)}\n.s-count{font-family:var(--fm);font-size:11px;color:var(--muted)}\n.s-text{font-size:14.5px;line-height:1.5;color:var(--ink-soft);flex:1}\n.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}\n.tag{font-family:var(--fm);font-size:11.5px;color:var(--brand-deep);background:var(--hairline);border-radius:5px;padding:3px 8px}\n.foot{margin-top:54px;padding-top:22px;border-top:1px solid var(--hairline-strong);display:grid;gap:10px;font-size:12.5px;color:var(--muted);line-height:1.55}\n.foot .brandline{font-family:var(--fl);font-weight:700;color:var(--ink-soft)}\n.foot code{font-family:var(--fm);font-size:11.5px;color:var(--brand-deep)}\n@media(max-width:680px){.split{grid-template-columns:1fr}.tile.wide{grid-column:span 1}.sec-head .sub{display:none}}\n</style></head><body><div class=\"doc\">\n<header class=\"masthead\">${motifSvg(T.motif, T.kickerRgb)}<div class=\"masthead-inner\">\n<div class=\"kicker\">Competitive Edge &middot; Market Recon Brief</div>\n<p class=\"subject-name\">${companyLabel}</p>\n<p class=\"subject-desc\">${companyDesc}</p>\n<div class=\"meta-row\">\n<div><div class=\"meta-label\">Prepared by</div><div class=\"meta-val\">${esc(norm.senderName||'AI Automation')}</div></div>\n<div><div class=\"meta-label\">Generated</div><div class=\"meta-val\">${today}</div></div>\n<div><div class=\"meta-label\">Sources</div><div class=\"meta-val\">${competitors.length+1} public websites</div></div>\n<div><div class=\"meta-label\">Competitors mapped</div><div class=\"meta-val\">${competitors.length} auto-discovered</div></div>\n</div></div></header>\n<div class=\"wrap\">\n<section><div class=\"sec-head\"><span class=\"eyebrow\">Executive Summary</span></div>\n<p class=\"lead\">${summary}</p>\n<div class=\"tiles\">\n<div class=\"tile\"><div class=\"t-num accent\">${limitations.length}</div><div class=\"t-label\">Capability gaps vs. competitors</div></div>\n<div class=\"tile\"><div class=\"t-num\">${competitors.length}</div><div class=\"t-label\">Direct competitors analyzed</div></div>\n<div class=\"tile\"><div class=\"t-num\">${recommendations.length}</div><div class=\"t-label\">Prioritized moves recommended</div></div>\n<div class=\"tile\"><div class=\"t-num\">4</div><div class=\"t-label\">Campaign assets drafted</div></div>\n${positioning?`<div class=\"tile wide\"><div class=\"t-label\" style=\"margin-top:0;margin-bottom:6px\">Recommended positioning</div><div class=\"t-num\">&ldquo;${positioning}&rdquo;</div></div>`:''}\n</div></section>\n<section><div class=\"sec-head\"><span class=\"idx\">01</span><h2>Competitive Gap Analysis</h2><span class=\"sub\">${companyLabel} vs. discovered competitors</span></div>\n<div class=\"matrix-scroll\"><table class=\"matrix\"><thead>${matrixHead}</thead><tbody>${matrixBody}</tbody></table></div>\n<div class=\"legend\"><span><span class=\"dot\" style=\"background:var(--gap)\"></span>None &mdash; not offered</span><span><span class=\"dot\" style=\"background:var(--watch)\"></span>Partial &mdash; underbuilt</span><span><span class=\"dot\" style=\"background:var(--have)\"></span>Have &mdash; established</span></div></section>\n<section><div class=\"sec-head\"><span class=\"idx\">02</span><h2>Limitations &amp; How to Beat the Market</h2></div>\n<div class=\"split\"><div class=\"panel\"><h3>Where ${companyLabel} is losing ground</h3><ul class=\"findings\">\n${limitations.map(l=>`<li><b>${esc(l.title||'')}.</b> ${esc(l.detail||'')}</li>`).join('')}\n</ul></div><div class=\"panel\"><h3>Prioritized moves</h3><ol class=\"recs\">\n${recommendations.map(r=>`<li><span><b>${esc(r.title||'')}.</b> ${esc(r.detail||'')}</span></li>`).join('')}\n</ol></div></div>\n${positioning?`<div class=\"positioning\"><span class=\"eyebrow\">The angle the campaign runs on</span><p>&ldquo;${positioning}&rdquo;</p></div>`:''}</section>\n<section><div class=\"sec-head\"><span class=\"idx\">03</span><h2>Ready-to-Post Campaign</h2><span class=\"sub\"><span class=\"drafts-badge\"><span class=\"pulse\"></span>Drafts &middot; review before sending</span></span></div>\n<div class=\"email-card\"><div class=\"email-head\"><span class=\"lbl\">Marketing Email</span><span class=\"lbl\">Subject</span><span class=\"subj\">${esc(email.subject||'')}</span></div>\n<div class=\"email-body\">${paras.map((p,i)=>`<p class=\"${/subscri|shop|start|book|call|learn|get |visit|order/i.test(p)&&i>0&&i<paras.length-1?'cta-line':''}\">${esc(p)}</p>`).join('')}</div></div>\n<div class=\"socials\">\n<div class=\"social\"><div class=\"s-head\"><span class=\"s-plat\">LinkedIn</span><span class=\"s-count\">${len(camp.linkedin)} chars</span></div><p class=\"s-text\">${esc(camp.linkedin||'')}</p></div>\n<div class=\"social\"><div class=\"s-head\"><span class=\"s-plat\">X / Twitter</span><span class=\"s-count\">${len(camp.x_post)} / 280</span></div><p class=\"s-text\">${esc(camp.x_post||'')}</p></div>\n<div class=\"social\"><div class=\"s-head\"><span class=\"s-plat\">Instagram</span><span class=\"s-count\">${len(camp.instagram_caption)} chars</span></div><p class=\"s-text\">${esc(camp.instagram_caption||'')}</p>\n${hashtags.length?`<div class=\"tags\">${hashtags.map(h=>`<span class=\"tag\">${esc(h.startsWith&&h.startsWith('#')?h:'#'+h)}</span>`).join('')}</div>`:''}</div>\n</div></section>\n<footer class=\"foot\">\n<div class=\"brandline\">Competitive Edge Campaign Builder &middot; automated market recon</div>\n<div>Generated from public web sources only &mdash; the company's own site plus <code>${competitors.length}</code> auto-discovered competitor sites. Competitor capability ratings are inferred from public pages and may need a human sanity-check.</div>\n<div>All campaign copy above is a <b>draft for human review</b>. Nothing is posted to social media or sent to any customer automatically.</div>\n<div style=\"font-family:var(--fl);color:var(--brand-deep)\">Theme applied: <b>${esc(T.label)}</b>${theme.industry?` &mdash; auto-selected for the ${esc(theme.industry)} industry`:''}.</div>\n</footer></div></div></body></html>`;\n\n// ---- email-safe summary (the email BODY; the full report goes out as a PDF) ----\n// Gmail strips flexbox/grid, so this uses only inline styles + block elements.\nconst topGaps = limitations.slice(0, 3);\nconst summaryHtml = `<div style=\"font-family:Arial,Helvetica,sans-serif;color:#222222;font-size:15px;line-height:1.6;max-width:600px;\">\n<p style=\"font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#8a8a8a;margin:0 0 4px;\">Competitive Edge &middot; Market Recon</p>\n<h2 style=\"font-size:22px;margin:0 0 12px;color:#111111;\">${companyLabel}</h2>\n<p style=\"margin:0 0 18px;\">${summary}</p>\n<p style=\"font-weight:bold;margin:0 0 6px;color:#111111;\">Top gaps vs. competitors</p>\n<ul style=\"margin:0 0 18px;padding-left:20px;\">\n${(topGaps.length ? topGaps : [{title:'See attached report',detail:''}]).map(l=>`<li style=\"margin-bottom:7px;\"><b>${esc(l.title||'')}.</b> ${esc(l.detail||'')}</li>`).join('')}\n</ul>\n${recommendations.length ? `<p style=\"font-weight:bold;margin:0 0 6px;color:#111111;\">Top move</p>\n<p style=\"margin:0 0 18px;\">&rarr; <b>${esc(recommendations[0].title||'')}.</b> ${esc(recommendations[0].detail||'')}</p>` : ''}\n${positioning ? `<p style=\"margin:0 0 18px;padding:12px 16px;background:#f4f4f4;border-left:3px solid #9a9a9a;font-style:italic;\">&ldquo;${positioning}&rdquo;</p>` : ''}\n<p style=\"margin:0 0 18px;\"><b>${competitors.length}</b> competitor${competitors.length===1?'':'s'} analyzed via web search. The full designed report &mdash; gap matrix, recommendations, and a ready-to-post campaign (email + LinkedIn + X + Instagram) &mdash; is attached as a <b>PDF</b>.</p>\n<p style=\"font-size:12px;color:#9a9a9a;margin:18px 0 0;\">All campaign copy is a draft for review. Nothing is auto-posted or sent to customers.</p>\n</div>`;\n\nconst slug = (norm.companyHost || 'report').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');\nconst pdfFilename = `competitive-edge-${slug}.pdf`;\n\nreturn [{\n  json: {\n    to: norm.notifyEmail,\n    subject: `Competitive Edge Report + Campaign — ${norm.companyLabel || 'your company'}`,\n    reportHtml: html,   // full designed report → rendered to PDF by the next node\n    summaryHtml,        // email body (Gmail-safe)\n    pdfFilename,\n    themeApplied: T.label,\n  },\n}];\n"
+      }
+    },
+    {
+      "name": "Render PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3360,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pdfshift.io/v3/convert/pdf",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ source: $json.reportHtml, use_print: true, landscape: false }) }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "name": "Name PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Name PDF — n8n Code node (Run Once for All Items)\n// Gives the PDF binary a friendly filename + correct mime so Gmail attaches it\n// as \"competitive-edge-<company>.pdf\" instead of a generic name.\nconst item = $input.first();\nconst fname = $('Assemble Report').first().json.pdfFilename || 'competitive-edge-report.pdf';\n\nif (item.binary && item.binary.data) {\n  item.binary.data.fileName = fname;\n  item.binary.data.fileExtension = 'pdf';\n  item.binary.data.mimeType = 'application/pdf';\n}\n\nreturn [item];\n"
+      }
+    },
+    {
+      "name": "Email Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3840,
+        300
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Assemble Report').item.json.to }}",
+        "subject": "={{ $('Assemble Report').item.json.subject }}",
+        "emailType": "html",
+        "message": "={{ $('Assemble Report').item.json.summaryHtml }}",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "Gemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        560
+      ],
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {
+          "maxOutputTokens": 4096,
+          "temperature": 0.4
+        }
+      }
+    },
+    {
+      "name": "Profile Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        520
+      ],
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\n  \"company_name\": \"Meridian Coffee Roasters\",\n  \"industry\": \"specialty coffee roaster and cafe\",\n  \"location\": \"Asheville, NC\",\n  \"search_query\": \"specialty coffee roasters in Asheville NC\"\n}\n"
+      }
+    },
+    {
+      "name": "Analysis Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2640,
+        520
+      ],
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\n  \"company_descriptor\": \"Specialty coffee roaster & neighborhood cafe · Asheville, NC · direct-to-consumer beans\",\n  \"company_summary\": \"You have a strong product and a loyal in-person following, but you monetize only the counter while every competitor sells online. Your farm-level transparency is a story none of them can tell as credibly, and it never leaves the cafe.\",\n  \"limitations\": [\n    { \"title\": \"No online subscription\", \"detail\": \"Recurring DTC revenue is left on the table while all three rivals sell beyond the counter.\" },\n    { \"title\": \"No content engine\", \"detail\": \"Zero brew guides or origin stories, so you are invisible for searches Fathom already ranks for.\" }\n  ],\n  \"matrix\": {\n    \"columns\": [\n      { \"name\": \"Fathom Coffee\", \"url\": \"https://fathomcoffee.co\" },\n      { \"name\": \"Ember & Oak\", \"url\": \"https://emberoak.com\" }\n    ],\n    \"rows\": [\n      { \"capability\": \"Online subscription / DTC\", \"subject_rating\": \"none\", \"competitor_ratings\": [\"have\", \"have\"] },\n      { \"capability\": \"Content & SEO\", \"subject_rating\": \"none\", \"competitor_ratings\": [\"have\", \"partial\"] }\n    ]\n  },\n  \"recommendations\": [\n    { \"title\": \"Launch a single-origin subscription\", \"detail\": \"Put a meet-the-farm card in every box to turn transparency into recurring revenue.\" },\n    { \"title\": \"Build a brew-guide content hub\", \"detail\": \"Target the exact keywords competitors already rank for.\" }\n  ],\n  \"positioning_angle\": \"Most coffee says single origin; you show them the farm and deliver it to their door.\",\n  \"theme\": {\n    \"industry\": \"specialty coffee\",\n    \"preset_key\": \"cozy_warm\",\n    \"accent_hex\": \"#a5673f\",\n    \"motif_key\": \"beans\",\n    \"rationale\": \"warm, craft, hospitality feel\"\n  }\n}\n"
+      }
+    },
+    {
+      "name": "Campaign Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2880,
+        520
+      ],
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\n  \"email\": {\n    \"subject\": \"The Asheville roaster that shows you the farm\",\n    \"body_paragraphs\": [\n      \"Hi there,\",\n      \"Most coffee brands say \\\"single origin.\\\" We can show you the exact farm, the elevation, and the grower.\",\n      \"Starting this month our rotating single-origin beans ship to you every two weeks, each box with a card on the farm behind it.\",\n      \"Start your subscription today.\",\n      \"Same beans your neighbors line up for, now on your counter.\",\n      \"— The Meridian team\"\n    ]\n  },\n  \"linkedin\": \"We have always believed you should know where your coffee comes from, not as a slogan but as a farm and a grower you can name. This month that transparency leaves the cafe: single-origin subscriptions ship every two weeks with the story of the farm inside every box.\",\n  \"x_post\": \"Most \\\"single origin\\\" coffee won't tell you the farm. Ours will, on a card in every box. Subscriptions ship every 2 weeks. Meet the farm behind your morning.\",\n  \"instagram_caption\": \"You already know our pour-over. Now meet the farm behind it. Single-origin subscriptions start this month, delivered every two weeks, each with the story of where it grew. Link in bio.\",\n  \"hashtags\": [\"SpecialtyCoffee\", \"SingleOrigin\", \"AshevilleCoffee\", \"CoffeeSubscription\", \"KnowYourFarmer\"]\n}\n"
+      }
+    }
+  ],
+  "connections": {
+    "Campaign Request Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Fetch Company Site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Company Site": {
+      "main": [
+        [
+          {
+            "node": "Clean Company Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Company Text": {
+      "main": [
+        [
+          {
+            "node": "Company Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Profile": {
+      "main": [
+        [
+          {
+            "node": "DuckDuckGo Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DuckDuckGo Search": {
+      "main": [
+        [
+          {
+            "node": "Extract Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Competitors": {
+      "main": [
+        [
+          {
+            "node": "Fetch Competitor Site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Competitor Site": {
+      "main": [
+        [
+          {
+            "node": "Clean Competitor Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Competitor Text": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Context": {
+      "main": [
+        [
+          {
+            "node": "Gap Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gap Analysis": {
+      "main": [
+        [
+          {
+            "node": "Campaign Copy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Copy": {
+      "main": [
+        [
+          {
+            "node": "Assemble Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assemble Report": {
+      "main": [
+        [
+          {
+            "node": "Render PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render PDF": {
+      "main": [
+        [
+          {
+            "node": "Name PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Name PDF": {
+      "main": [
+        [
+          {
+            "node": "Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Company Profile",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Gap Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Campaign Copy",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Profile Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Company Profile",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analysis Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Gap Analysis",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaign Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Campaign Copy",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

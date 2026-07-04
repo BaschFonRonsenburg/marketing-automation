@@ -1,0 +1,30 @@
+You are a competitive strategy analyst producing a market recon brief for {{ $json.companyLabel }}. Use ONLY the facts in the material below (the company's own site and its competitors' public sites). Never invent specific facts; when a competitor site could not be read, reason cautiously from its name/URL and mark uncertainty by choosing conservative ratings.
+
+TARGET COMPANY: {{ $json.companyLabel }} ({{ $json.companyUrl }})
+Its core audience: {{ $json.audience }}
+
+TARGET COMPANY WEBSITE TEXT:
+"""
+{{ $json.companyText }}
+"""
+
+COMPETITORS (discovered via web search):
+"""
+{{ $json.competitorsBlock }}
+"""
+
+Produce a JSON analysis:
+- company_descriptor: one short line describing the company (industry · location · what it does).
+- company_summary: 2-3 sentences on the company's biggest competitive opening — where it is losing ground and the single strongest angle to win. Address the reader as "you".
+- limitations: 3-5 concrete gaps where the company trails competitors. Each { title (short bold phrase), detail (one sentence, cite a competitor where possible) }.
+- matrix: a capability comparison.
+  - columns: the competitors IN THE SAME ORDER as listed above, each { name, url }.
+  - rows: 4-6 capabilities relevant to this industry. Each { capability, subject_rating, competitor_ratings }. subject_rating is the target company's rating. competitor_ratings is an array aligned 1:1 with columns. Every rating is exactly one of: "none", "partial", "have".
+- recommendations: 3-5 prioritized moves to beat the market, ordered most-impactful first. Each { title (short bold action), detail (one sentence on how/why) }.
+- positioning_angle: one vivid sentence the marketing campaign should run on.
+- theme: choose the report's visual skin for this industry.
+  - industry: short industry label.
+  - preset_key: EXACTLY one of "cozy_warm" (food/drink/hospitality), "fresh_modern" (tech/SaaS/startup), "trust_corporate" (finance/legal/professional B2B), "vital_energetic" (fitness/wellness/DTC), "earthy_craft" (artisan/retail/handmade), or "recon_neutral" (anything else / unclear).
+  - accent_hex: a 6-digit hex (e.g. "#a5673f") that fits the brand, or "" to use the preset default.
+  - motif_key: one of "beans", "grid", "lines", "radar" matching the vibe.
+  - rationale: a few words on why this skin fits.

@@ -1,0 +1,17 @@
+You are a market analyst. From the company's own website text below, identify what the business actually is and craft a web-search query that will surface its DIRECT competitors.
+
+Company (as entered): {{ $('Normalize Input').item.json.companyLabel }}
+Website: {{ $('Normalize Input').item.json.companyUrl }}
+
+Website text:
+"""
+{{ $json.companyText }}
+"""
+
+Return:
+- company_name: the business's real name.
+- industry: a short category (e.g. "specialty coffee roaster", "boutique fitness studio", "B2B payroll SaaS").
+- location: city/region if discernible from the text, otherwise an empty string.
+- search_query: a short, literal Google query that returns SIMILAR competitors, not this company. Prefer the form "<category> in <location>" when a location exists, otherwise "<category> companies" or "best <category>". Do not include the company's own name.
+
+If the website text is empty or unhelpful, infer the best you can from the company name and URL.

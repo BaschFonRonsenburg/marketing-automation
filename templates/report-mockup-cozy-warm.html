@@ -1,0 +1,360 @@
+<style>
+  :root {
+    /* ===== THEME: cozy_warm (food / beverage / café) ===== */
+    --ink: #2c1e15;
+    --ink-soft: #5a4433;
+    --muted: #8a7563;
+    --paper: #f6efe4;
+    --card: #fffdf8;
+    --hairline: #e7dccb;
+    --hairline-strong: #d8c9b2;
+    --brand: #a5673f;          /* latte / caramel — typographic accent */
+    --brand-deep: #7a4a2b;
+    --gap: #b23a2e;            /* semantic: critical gap (warm brick) */
+    --gap-bg: #f6e3de;
+    --watch: #b3801b;          /* semantic: partial (caramel amber) */
+    --watch-bg: #f6ecd6;
+    --have: #5c7a3a;           /* semantic: strong (warm olive) */
+    --have-bg: #eaf0dc;
+    --font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --font-body: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --font-label: 'Trebuchet MS', 'Segoe UI', 'Gill Sans', sans-serif;
+    --font-mono: 'Consolas', 'Cascadia Mono', 'SFMono-Regular', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  .doc {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px 72px; }
+
+  .eyebrow {
+    font-family: var(--font-label);
+    text-transform: uppercase; letter-spacing: 0.16em;
+    font-size: 12px; font-weight: 700; color: var(--brand);
+  }
+
+  h2 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 28px; letter-spacing: 0.005em; text-wrap: balance;
+    margin: 0; color: var(--ink);
+  }
+  h3 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 19px; margin: 0; color: var(--ink);
+  }
+  p { margin: 0; }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    position: relative; overflow: hidden;
+    background: linear-gradient(150deg, #2b1d14 0%, #3a2618 55%, #4a2f1a 130%);
+    color: #f4e9da;
+  }
+  .masthead-inner { position: relative; z-index: 2; max-width: 940px; margin: 0 auto; padding: 40px 24px 34px; }
+  .motif { position: absolute; top: -70px; right: -60px; width: 420px; height: 420px; z-index: 1; opacity: 0.5; pointer-events: none; }
+  .masthead .kicker {
+    font-family: var(--font-label);
+    text-transform: uppercase; letter-spacing: 0.28em;
+    font-size: 12px; font-weight: 700; color: #e0b483;
+    margin-bottom: 18px; display: flex; align-items: center; gap: 12px;
+  }
+  .masthead .kicker::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(224,180,131,0.55), rgba(224,180,131,0)); }
+  .subject-name {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(34px, 6vw, 54px); line-height: 1.02;
+    margin: 0 0 10px; text-wrap: balance;
+  }
+  .subject-desc { font-size: 18px; color: #d8c3aa; max-width: 54ch; margin-bottom: 26px; font-style: italic; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 30px 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.14); }
+  .meta-item .meta-label { font-family: var(--font-label); text-transform: uppercase; letter-spacing: 0.14em; font-size: 10.5px; color: #b79a7c; margin-bottom: 4px; font-weight: 700; }
+  .meta-item .meta-val { font-family: var(--font-mono); font-size: 13.5px; color: #ece0d0; }
+
+  /* ---------- Section scaffolding ---------- */
+  section { margin-top: 52px; }
+  .sec-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 22px; }
+  .sec-head .idx { font-family: var(--font-mono); font-size: 13px; color: var(--brand); padding-top: 4px; }
+  .sec-head .sub { margin-left: auto; font-size: 14px; color: var(--muted); font-family: var(--font-label); letter-spacing: 0.02em; text-align: right; }
+
+  /* ---------- Summary tiles ---------- */
+  .lead { font-size: 19px; line-height: 1.6; color: var(--ink-soft); max-width: 68ch; margin-bottom: 26px; }
+  .lead strong { color: var(--ink); }
+  .tiles { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .tile { background: var(--card); border: 1px solid var(--hairline); border-radius: 14px; padding: 18px 20px; }
+  .tile .t-num { font-family: var(--font-display); font-weight: 700; font-size: 36px; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .tile .t-num.accent { color: var(--gap); }
+  .tile .t-label { margin-top: 8px; font-size: 13.5px; color: var(--muted); }
+  .tile.wide { grid-column: span 2; }
+  .tile.wide .t-num { font-size: 21px; font-family: var(--font-body); font-style: italic; color: var(--brand-deep); line-height: 1.3; }
+
+  /* ---------- Matrix ---------- */
+  .matrix-scroll { overflow-x: auto; border-radius: 14px; border: 1px solid var(--hairline); }
+  table.matrix { width: 100%; border-collapse: collapse; background: var(--card); min-width: 620px; }
+  table.matrix thead th { font-family: var(--font-label); font-size: 13px; font-weight: 700; letter-spacing: 0.02em; text-align: left; padding: 15px 16px; color: var(--muted); border-bottom: 1px solid var(--hairline-strong); vertical-align: bottom; }
+  table.matrix thead th.subject-col { color: var(--ink); background: #f3e7d6; border-bottom: 2px solid var(--brand); }
+  table.matrix thead th .col-tag { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0; color: var(--brand); text-transform: none; margin-top: 3px; font-weight: 400; }
+  table.matrix tbody td { padding: 13px 16px; border-bottom: 1px solid var(--hairline); font-size: 14px; }
+  table.matrix tbody tr:last-child td { border-bottom: none; }
+  table.matrix td.cap { font-family: var(--font-body); color: var(--ink); }
+  table.matrix td.subject-col { background: #fbf3e6; }
+  .cell { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-label); font-weight: 600; font-size: 12.5px; letter-spacing: 0.01em; padding: 4px 10px 4px 8px; border-radius: 20px; white-space: nowrap; }
+  .cell .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .cell.gap { background: var(--gap-bg); color: #8a2a20; }
+  .cell.gap .dot { background: var(--gap); }
+  .cell.watch { background: var(--watch-bg); color: #7a5710; }
+  .cell.watch .dot { background: var(--watch); }
+  .cell.have { background: var(--have-bg); color: #46602c; }
+  .cell.have .dot { background: var(--have); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px; font-size: 13px; color: var(--muted); font-family: var(--font-label); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend .dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  /* ---------- Two-column ---------- */
+  .split { display: grid; gap: 26px; grid-template-columns: 1fr 1fr; }
+  .panel { background: var(--card); border: 1px solid var(--hairline); border-radius: 14px; padding: 24px 26px; }
+  .panel > h3 { margin-bottom: 16px; }
+  ul.findings { list-style: none; margin: 0; padding: 0; display: grid; gap: 15px; }
+  ul.findings li { padding-left: 20px; position: relative; font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
+  ul.findings li::before { content: ""; position: absolute; left: 0; top: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--gap); }
+  ul.findings li b { color: var(--ink); font-weight: 700; }
+  ol.recs { list-style: none; margin: 0; padding: 0; counter-reset: r; display: grid; gap: 18px; }
+  ol.recs li { counter-increment: r; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
+  ol.recs li::before { content: counter(r, decimal-leading-zero); font-family: var(--font-mono); font-size: 13px; color: var(--brand); font-weight: 700; padding-top: 2px; }
+  ol.recs li b { color: var(--ink); font-weight: 700; }
+
+  .positioning { margin-top: 26px; background: linear-gradient(180deg, #a5673f10, #a5673f05); border: 1px solid #e3c9ac; border-left: 3px solid var(--brand); border-radius: 12px; padding: 20px 24px; }
+  .positioning .eyebrow { color: var(--brand-deep); }
+  .positioning p { font-size: 20px; font-style: italic; line-height: 1.45; color: var(--ink); margin-top: 8px; max-width: 60ch; }
+
+  /* ---------- Campaign ---------- */
+  .drafts-badge { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-label); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #7a5710; background: var(--watch-bg); border: 1px solid #e6d3a3; border-radius: 20px; padding: 5px 13px; }
+  .drafts-badge .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--watch); }
+  .email-card { background: var(--card); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; }
+  .email-head { padding: 16px 24px; border-bottom: 1px solid var(--hairline); background: #fbf4e8; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; }
+  .email-head .lbl { font-family: var(--font-label); font-weight: 700; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .email-head .subj { font-size: 18px; font-weight: 700; color: var(--ink); font-family: var(--font-display); }
+  .email-body { padding: 22px 24px; }
+  .email-body p { margin-bottom: 13px; color: var(--ink-soft); font-size: 15.5px; }
+  .email-body .cta-line { color: var(--brand-deep); font-weight: 700; font-style: italic; }
+  .email-body .sig { color: var(--muted); font-size: 14.5px; }
+  .socials { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-top: 16px; }
+  .social { background: var(--card); border: 1px solid var(--hairline); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; }
+  .social .s-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .social .s-plat { font-family: var(--font-label); font-weight: 700; font-size: 14px; color: var(--ink); }
+  .social .s-count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .social .s-text { font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); flex: 1; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .tag { font-family: var(--font-mono); font-size: 11.5px; color: var(--brand-deep); background: #f1e4d2; border-radius: 5px; padding: 3px 8px; }
+
+  /* ---------- Footer ---------- */
+  .foot { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--hairline-strong); display: grid; gap: 10px; font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+  .foot .brandline { font-family: var(--font-label); font-weight: 700; letter-spacing: 0.03em; color: var(--ink-soft); }
+  .foot code { font-family: var(--font-mono); font-size: 11.5px; color: var(--brand-deep); }
+
+  @media (max-width: 680px) {
+    .split { grid-template-columns: 1fr; }
+    .tile.wide { grid-column: span 1; }
+    .sec-head .sub { display: none; }
+  }
+</style>
+
+<div class="doc">
+  <header class="masthead">
+    <svg class="motif" viewBox="0 0 420 420" fill="none" aria-hidden="true">
+      <g stroke="#e9d3b6" stroke-width="1.4" fill="none" opacity="0.9">
+        <!-- coffee beans -->
+        <g transform="translate(300,90) rotate(28)"><ellipse cx="0" cy="0" rx="26" ry="17"/><path d="M0 -15 C 8 -6, 8 6, 0 15"/></g>
+        <g transform="translate(360,180) rotate(-14)"><ellipse cx="0" cy="0" rx="24" ry="15"/><path d="M0 -13 C 7 -5, 7 5, 0 13"/></g>
+        <g transform="translate(250,200) rotate(52)"><ellipse cx="0" cy="0" rx="22" ry="14"/><path d="M0 -12 C 6 -4, 6 4, 0 12"/></g>
+        <g transform="translate(330,290) rotate(8)"><ellipse cx="0" cy="0" rx="25" ry="16"/><path d="M0 -14 C 7 -5, 7 5, 0 14"/></g>
+        <g transform="translate(200,110) rotate(-38)"><ellipse cx="0" cy="0" rx="20" ry="13"/><path d="M0 -11 C 6 -4, 6 4, 0 11"/></g>
+      </g>
+      <!-- steam -->
+      <g stroke="#e9d3b6" stroke-width="2" fill="none" opacity="0.35" stroke-linecap="round">
+        <path d="M120 300 C 138 270, 102 250, 120 220 C 138 190, 102 170, 120 140"/>
+        <path d="M160 320 C 178 290, 142 270, 160 240 C 178 210, 142 190, 160 160"/>
+      </g>
+    </svg>
+    <div class="masthead-inner">
+      <div class="kicker">Competitive Edge&nbsp;&middot;&nbsp;Market Recon Brief</div>
+      <p class="subject-name">Meridian Coffee Roasters</p>
+      <p class="subject-desc">Specialty coffee roaster &amp; neighborhood caf&eacute; &middot; Asheville, NC &middot; direct-to-consumer beans market</p>
+      <div class="meta-row">
+        <div class="meta-item"><div class="meta-label">Prepared by</div><div class="meta-val">Ryan &mdash; AI Automation</div></div>
+        <div class="meta-item"><div class="meta-label">Generated</div><div class="meta-val">Jul 5, 2026</div></div>
+        <div class="meta-item"><div class="meta-label">Sources</div><div class="meta-val">4 public websites</div></div>
+        <div class="meta-item"><div class="meta-label">Competitors mapped</div><div class="meta-val">3 auto-discovered</div></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <section id="summary">
+      <div class="sec-head"><span class="eyebrow">Executive Summary</span></div>
+      <p class="lead">
+        Meridian has a genuinely strong product and a loyal in-person following &mdash; but it is
+        <strong>monetizing only the counter</strong>. All three competitors mapped in your market
+        have moved revenue and audience online. The single biggest opening: your farm-level
+        transparency is a story <strong>nobody else can tell as credibly</strong>, and right now
+        it never leaves the caf&eacute;.
+      </p>
+      <div class="tiles">
+        <div class="tile"><div class="t-num accent">5</div><div class="t-label">Capability gaps vs. competitors</div></div>
+        <div class="tile"><div class="t-num">3</div><div class="t-label">Direct competitors analyzed</div></div>
+        <div class="tile"><div class="t-num">4</div><div class="t-label">Prioritized moves recommended</div></div>
+        <div class="tile"><div class="t-num">4</div><div class="t-label">Campaign assets drafted</div></div>
+        <div class="tile wide">
+          <div class="t-label" style="margin-top:0;margin-bottom:6px;">Recommended positioning</div>
+          <div class="t-num">&ldquo;The transparent single-origin roaster your neighborhood actually knows.&rdquo;</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gaps">
+      <div class="sec-head"><span class="idx">01</span><h2>Competitive Gap Analysis</h2><span class="sub">Meridian vs. discovered competitors</span></div>
+      <div class="matrix-scroll">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th>Capability</th>
+              <th class="subject-col">Meridian<span class="col-tag">you</span></th>
+              <th>Fathom Coffee<span class="col-tag">fathomcoffee.co</span></th>
+              <th>Ember &amp; Oak<span class="col-tag">emberoak.com</span></th>
+              <th>Copper Kettle<span class="col-tag">copperkettle.co</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cap">Online subscription / DTC</td>
+              <td class="subject-col"><span class="cell gap"><span class="dot"></span>None</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+              <td><span class="cell watch"><span class="dot"></span>Partial</span></td>
+            </tr>
+            <tr>
+              <td class="cap">Content &amp; SEO (brew guides, origin stories)</td>
+              <td class="subject-col"><span class="cell gap"><span class="dot"></span>None</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+              <td><span class="cell watch"><span class="dot"></span>Partial</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+            </tr>
+            <tr>
+              <td class="cap">Loyalty / rewards program</td>
+              <td class="subject-col"><span class="cell watch"><span class="dot"></span>Partial</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+              <td><span class="cell gap"><span class="dot"></span>None</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+            </tr>
+            <tr>
+              <td class="cap">Active social storytelling</td>
+              <td class="subject-col"><span class="cell watch"><span class="dot"></span>Partial</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+              <td><span class="cell watch"><span class="dot"></span>Partial</span></td>
+            </tr>
+            <tr>
+              <td class="cap">Wholesale / B2B page</td>
+              <td class="subject-col"><span class="cell gap"><span class="dot"></span>None</span></td>
+              <td><span class="cell watch"><span class="dot"></span>Partial</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+              <td><span class="cell have"><span class="dot"></span>Have</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--gap)"></span>None &mdash; not offered</span>
+        <span><span class="dot" style="background:var(--watch)"></span>Partial &mdash; exists but underbuilt</span>
+        <span><span class="dot" style="background:var(--have)"></span>Have &mdash; established</span>
+      </div>
+    </section>
+
+    <section id="findings">
+      <div class="sec-head"><span class="idx">02</span><h2>Limitations &amp; How to Beat the Market</h2></div>
+      <div class="split">
+        <div class="panel">
+          <h3>Where Meridian is losing ground</h3>
+          <ul class="findings">
+            <li><b>No online subscription.</b> Recurring DTC revenue is left on the table &mdash; all three rivals sell beyond the counter.</li>
+            <li><b>No content engine.</b> Zero brew guides or origin stories, so you're invisible for &ldquo;single origin Asheville&rdquo; searches Fathom already ranks for.</li>
+            <li><b>Punch-card-only loyalty.</b> No email capture means no list to grow &mdash; competitors run data-backed rewards.</li>
+            <li><b>Thin social cadence.</b> Great product, inconsistent storytelling versus Fathom's daily origin posts.</li>
+            <li><b>No wholesale page.</b> Local caf&eacute;s and offices can't find or contact you; two rivals capture that B2B demand.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Prioritized moves</h3>
+          <ol class="recs">
+            <li><span><b>Launch a single-origin subscription.</b> Put a &ldquo;meet the farm&rdquo; card in every box &mdash; turn your transparency edge into recurring revenue.</span></li>
+            <li><span><b>Build a brew-guide + origin content hub.</b> Target the exact keywords Fathom and Copper Kettle already rank for.</span></li>
+            <li><span><b>Move loyalty to email-backed rewards.</b> Capture addresses at the caf&eacute; to build the list your subscription launch needs.</span></li>
+            <li><span><b>Add a wholesale landing page.</b> A simple inquiry form reclaims local caf&eacute; and office accounts.</span></li>
+          </ol>
+        </div>
+      </div>
+      <div class="positioning">
+        <span class="eyebrow">The angle the campaign runs on</span>
+        <p>&ldquo;Most coffee says single origin. Meridian shows you the farm &mdash; the elevation, the grower, the story &mdash; and now delivers it to your door.&rdquo;</p>
+      </div>
+    </section>
+
+    <section id="campaign">
+      <div class="sec-head"><span class="idx">03</span><h2>Ready-to-Post Campaign</h2><span class="sub"><span class="drafts-badge"><span class="pulse"></span>Drafts &middot; review before sending</span></span></div>
+
+      <div class="email-card">
+        <div class="email-head">
+          <span class="lbl">Marketing Email</span>
+          <span class="lbl">Subject</span>
+          <span class="subj">The Asheville roaster that shows you the farm</span>
+        </div>
+        <div class="email-body">
+          <p>Hi there,</p>
+          <p>Most coffee brands say &ldquo;single origin.&rdquo; Meridian can show you the exact farm &mdash; the elevation, the grower, and the harvest &mdash; and right now that story only lives inside our caf&eacute;.</p>
+          <p>That changes this month. Our rotating single-origin beans now ship straight to you, every two weeks, each box with a card on the farm behind it.</p>
+          <p class="cta-line">Start your subscription &rarr;</p>
+          <p>Same beans your neighbors line up for &mdash; now on your counter.</p>
+          <p class="sig">&mdash; The Meridian team</p>
+        </div>
+      </div>
+
+      <div class="socials">
+        <div class="social">
+          <div class="s-head"><span class="s-plat">LinkedIn</span><span class="s-count">412 chars</span></div>
+          <p class="s-text">We've always believed you should know where your coffee comes from &mdash; not as a slogan, but as a farm, an elevation, and a grower you can name. This month that transparency leaves the caf&eacute;: Meridian single-origin subscriptions ship every two weeks, the story of the farm inside every box. Neighborhood roaster, farm-level transparency &mdash; now at your door.</p>
+        </div>
+        <div class="social">
+          <div class="s-head"><span class="s-plat">X / Twitter</span><span class="s-count">168 / 280</span></div>
+          <p class="s-text">Most &ldquo;single origin&rdquo; coffee won't tell you the farm. Ours will &mdash; on a card in every box. Meridian subscriptions ship every 2 weeks. Meet the farm behind your morning. &#9749;</p>
+        </div>
+        <div class="social">
+          <div class="s-head"><span class="s-plat">Instagram</span><span class="s-count">243 chars</span></div>
+          <p class="s-text">You already know our pour-over. Now meet the farm behind it. &#9749; Meridian single-origin subscriptions start this month &mdash; rotating beans delivered every two weeks, each with the story of where it grew. Link in bio.</p>
+          <div class="tags">
+            <span class="tag">#SpecialtyCoffee</span>
+            <span class="tag">#SingleOrigin</span>
+            <span class="tag">#AshevilleCoffee</span>
+            <span class="tag">#CoffeeSubscription</span>
+            <span class="tag">#KnowYourFarmer</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div class="brandline">Competitive Edge Campaign Builder &middot; automated market recon</div>
+      <div>Generated from public web sources only &mdash; the company's own site plus <code>3</code> auto-discovered competitor sites. Competitor capability ratings are inferred from public pages and may need a human sanity-check.</div>
+      <div>All campaign copy above is a <b>draft for human review</b>. Nothing is posted to social media or sent to any customer automatically &mdash; you approve and publish each asset yourself.</div>
+      <div style="font-family:var(--font-label);color:var(--brand-deep);">Theme applied: <b>cozy_warm</b> &mdash; auto-selected for the coffee / beverage industry.</div>
+    </footer>
+
+  </div>
+</div>

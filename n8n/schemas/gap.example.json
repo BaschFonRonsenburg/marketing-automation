@@ -1,0 +1,30 @@
+{
+  "company_descriptor": "Specialty coffee roaster & neighborhood cafe · Asheville, NC · direct-to-consumer beans",
+  "company_summary": "You have a strong product and a loyal in-person following, but you monetize only the counter while every competitor sells online. Your farm-level transparency is a story none of them can tell as credibly, and it never leaves the cafe.",
+  "limitations": [
+    { "title": "No online subscription", "detail": "Recurring DTC revenue is left on the table while all three rivals sell beyond the counter." },
+    { "title": "No content engine", "detail": "Zero brew guides or origin stories, so you are invisible for searches Fathom already ranks for." }
+  ],
+  "matrix": {
+    "columns": [
+      { "name": "Fathom Coffee", "url": "https://fathomcoffee.co" },
+      { "name": "Ember & Oak", "url": "https://emberoak.com" }
+    ],
+    "rows": [
+      { "capability": "Online subscription / DTC", "subject_rating": "none", "competitor_ratings": ["have", "have"] },
+      { "capability": "Content & SEO", "subject_rating": "none", "competitor_ratings": ["have", "partial"] }
+    ]
+  },
+  "recommendations": [
+    { "title": "Launch a single-origin subscription", "detail": "Put a meet-the-farm card in every box to turn transparency into recurring revenue." },
+    { "title": "Build a brew-guide content hub", "detail": "Target the exact keywords competitors already rank for." }
+  ],
+  "positioning_angle": "Most coffee says single origin; you show them the farm and deliver it to their door.",
+  "theme": {
+    "industry": "specialty coffee",
+    "preset_key": "cozy_warm",
+    "accent_hex": "#a5673f",
+    "motif_key": "beans",
+    "rationale": "warm, craft, hospitality feel"
+  }
+}
