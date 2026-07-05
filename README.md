@@ -1,21 +1,13 @@
-# Marketing Automation
+# Competitive Edge Campaign Builder
 
-Two AI marketing tools built as portfolio pieces:
-
-1. **Competitive Edge Campaign Builder** — an n8n workflow that turns one company URL into a
-   competitor gap analysis **and** a ready-to-post ad campaign, delivered as a polished PDF. *(main project)*
-2. **Live Sales Demo** — an earlier Streamlit app that drafts a personalized cold email + social post
-   from a prospect's website. *(kept for reference)*
-
----
-
-## 1. Competitive Edge Campaign Builder (n8n)
+An n8n workflow that turns one company URL into a competitor gap analysis **and** a ready-to-post
+ad campaign, delivered as a polished PDF.
 
 You give it a company. A few minutes later you get an email with a designed **PDF report** that shows
 where that company is losing to its competitors and hands you a full ad campaign to fix it — all
-generated automatically, nothing posted or sent to customers without your review.
+generated automatically. Nothing is posted or sent to customers without your review.
 
-### How it works
+## How it works
 
 1. **You submit a company website** in a simple web form (the workflow's built-in form trigger).
 2. **It reads the company's own site** and figures out what the business is and what to search for.
@@ -29,7 +21,7 @@ generated automatically, nothing posted or sent to customers without your review
 
 Everything is a **draft for human review** — the tool never posts to social media or emails customers.
 
-### Built with (all free-tier friendly)
+## Built with (all free-tier friendly)
 
 - **n8n** — the workflow engine (self-hosted or cloud)
 - **Google Gemini** — the AI writing/analysis (free Google AI Studio key)
@@ -37,7 +29,7 @@ Everything is a **draft for human review** — the tool never posts to social me
 - **PDFShift** — turns the HTML report into a PDF (free tier)
 - **Gmail** — sends the finished report
 
-### Run it
+## Run it
 
 1. In n8n: **Import from File** → [`n8n/competitive_edge_campaign.workflow.json`](n8n/competitive_edge_campaign.workflow.json).
 2. Add three credentials: **Google Gemini** (on the *Gemini* node), **PDFShift** (Header Auth,
@@ -46,7 +38,7 @@ Everything is a **draft for human review** — the tool never posts to social me
 
 Full step-by-step + design notes: [`workflows/competitive_edge_campaign.md`](workflows/competitive_edge_campaign.md).
 
-### How the n8n folder is organized
+## How the project is organized
 
 The workflow JSON is generated from small, readable source files so it's easy to edit:
 
@@ -60,36 +52,5 @@ The workflow JSON is generated from small, readable source files so it's easy to
 
 ---
 
-## 2. Live Sales Demo (Streamlit) — earlier version
-
-A Streamlit app for live client calls: enter a prospect's business name/URL, it scrapes their own
-public site for context, and drafts a personalized cold outreach email and social post with Claude.
-A second tab showcases case studies.
-
-### How it works
-
-1. You enter a business name or URL.
-2. The app scrapes that business's own public site (`tools/scrape_business_site.py`) — it respects
-   `robots.txt`, reads the homepage + an About page, and extracts up to ~4,000 characters of text.
-   If the site can't be scraped, it falls back to a manual-paste box.
-3. That context is sent to Claude (`tools/generate_outreach.py`), which drafts a short cold email +
-   a social post, each grounded in concrete details from the site.
-4. Both drafts are editable — nothing is ever sent automatically.
-5. The **Case Studies tab** renders `data/case_studies.yaml` as cards.
-
-### Setup
-
-```
-pip install -r requirements.txt
-cp .env.example .env    # then add your Anthropic API key
-streamlit run app.py
-```
-
-- `app.py` — Streamlit UI (thin orchestrator, calls into `tools/`)
-- `tools/` — standalone Python scripts, each testable via `python -m tools.<name>`
-- `data/case_studies.yaml` — editable case-study content
-
----
-
-_No secrets are committed — `.env` is gitignored, and API keys live only in your n8n credentials or
-your local `.env`. All generated marketing copy is a draft for human review._
+_No secrets are committed — API keys live only in your n8n credentials, never in this repo. All
+generated marketing copy is a draft for human review._

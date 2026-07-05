@@ -1,10 +1,9 @@
+# secrets — API keys live in n8n credentials, never here
 .env
-__pycache__/
-*.pyc
-.tmp/*
-!.tmp/.gitkeep
-.venv/
-venv/
-streamlit.pid
-streamlit_err.log
-streamlit_out.log
+
+# node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
