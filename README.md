@@ -7,6 +7,16 @@ You give it a company. A few minutes later you get an email with a designed **PD
 where that company is losing to its competitors and hands you a full ad campaign to fix it — all
 generated automatically. Nothing is posted or sent to customers without your review.
 
+## Preview
+
+![Competitive Edge Campaign report](docs/preview.svg)
+
+<sub>Illustrative mockup of the delivered PDF — the gap-analysis matrix (None / Partial / Have per
+competitor), the recommended positioning, and the ready-to-post campaign. The report **auto-themes
+to the company's industry**; this is the `cozy_warm` coffee preset. Standalone HTML previews of the
+real design live in [`templates/`](templates/) — open them in a browser, or render a live report by
+importing the workflow and submitting a URL.</sub>
+
 ## How it works
 
 1. **You submit a company website** in a simple web form (the workflow's built-in form trigger).

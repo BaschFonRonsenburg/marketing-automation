@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 680" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <linearGradient id="mast" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b1d14"/>
+      <stop offset="0.55" stop-color="#3a2618"/>
+      <stop offset="1" stop-color="#4a2f1a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- page / paper -->
+  <rect width="920" height="680" rx="10" fill="#f6efe4"/>
+
+  <!-- window bar -->
+  <rect x="0" y="0" width="920" height="40" rx="10" fill="#e3dccf"/>
+  <rect x="0" y="20" width="920" height="20" fill="#e3dccf"/>
+  <circle cx="24" cy="20" r="6" fill="#ff5f57"/>
+  <circle cx="44" cy="20" r="6" fill="#febc2e"/>
+  <circle cx="64" cy="20" r="6" fill="#28c840"/>
+  <text x="460" y="25" text-anchor="middle" font-size="12" fill="#8a7563" font-family="'Segoe UI', sans-serif">Competitive Edge Campaign — report.pdf</text>
+
+  <!-- masthead -->
+  <rect x="0" y="40" width="920" height="150" fill="url(#mast)"/>
+  <!-- faint coffee-bean motif -->
+  <g stroke="#e9d3b6" stroke-width="1.3" fill="none" opacity="0.4">
+    <g transform="translate(806,86) rotate(28)"><ellipse rx="22" ry="14"/><path d="M0 -12 C 7 -4, 7 4, 0 12"/></g>
+    <g transform="translate(858,150) rotate(-14)"><ellipse rx="20" ry="12"/><path d="M0 -10 C 6 -3, 6 3, 0 10"/></g>
+    <g transform="translate(760,158) rotate(52)"><ellipse rx="18" ry="11"/><path d="M0 -9 C 5 -3, 5 3, 0 9"/></g>
+  </g>
+  <text x="40" y="80" font-size="11" font-weight="700" letter-spacing="4" fill="#e0b483" font-family="'Trebuchet MS', sans-serif">COMPETITIVE EDGE · MARKET RECON BRIEF</text>
+  <text x="40" y="122" font-size="34" font-weight="700" fill="#f4e9da">Meridian Coffee Roasters</text>
+  <text x="40" y="146" font-size="14" font-style="italic" fill="#d8c3aa">Specialty coffee roaster &amp; neighborhood café · Asheville, NC</text>
+  <line x1="40" y1="160" x2="880" y2="160" stroke="#ffffff" stroke-opacity="0.14"/>
+  <g font-family="'Consolas', monospace">
+    <text x="40" y="178" font-size="10" letter-spacing="1.5" fill="#b79a7c" font-family="'Trebuchet MS', sans-serif">PREPARED BY</text>
+    <text x="40" y="184" font-size="0" fill="#ece0d0"> </text>
+    <text x="180" y="178" font-size="10" letter-spacing="1.5" fill="#b79a7c" font-family="'Trebuchet MS', sans-serif">GENERATED</text>
+    <text x="320" y="178" font-size="10" letter-spacing="1.5" fill="#b79a7c" font-family="'Trebuchet MS', sans-serif">COMPETITORS MAPPED</text>
+  </g>
+
+  <!-- Executive summary tiles -->
+  <text x="40" y="222" font-size="11" font-weight="700" letter-spacing="2.5" fill="#a5673f" font-family="'Trebuchet MS', sans-serif">EXECUTIVE SUMMARY</text>
+  <g font-family="'Trebuchet MS', sans-serif">
+    <rect x="40" y="234" width="132" height="70" rx="12" fill="#fffdf8" stroke="#e7dccb"/>
+    <text x="56" y="278" font-size="32" font-weight="700" fill="#b23a2e" font-family="Georgia, serif">5</text>
+    <text x="56" y="294" font-size="11.5" fill="#8a7563">Capability gaps</text>
+
+    <rect x="184" y="234" width="132" height="70" rx="12" fill="#fffdf8" stroke="#e7dccb"/>
+    <text x="200" y="278" font-size="32" font-weight="700" fill="#2c1e15" font-family="Georgia, serif">3</text>
+    <text x="200" y="294" font-size="11.5" fill="#8a7563">Competitors analyzed</text>
+
+    <rect x="328" y="234" width="132" height="70" rx="12" fill="#fffdf8" stroke="#e7dccb"/>
+    <text x="344" y="278" font-size="32" font-weight="700" fill="#2c1e15" font-family="Georgia, serif">4</text>
+    <text x="344" y="294" font-size="11.5" fill="#8a7563">Prioritized moves</text>
+
+    <rect x="472" y="234" width="408" height="70" rx="12" fill="#fffdf8" stroke="#e7dccb"/>
+    <text x="488" y="258" font-size="11.5" fill="#8a7563">Recommended positioning</text>
+    <text x="488" y="282" font-size="15" font-style="italic" fill="#7a4a2b" font-family="Georgia, serif">“The transparent single-origin roaster your</text>
+    <text x="488" y="300" font-size="15" font-style="italic" fill="#7a4a2b" font-family="Georgia, serif">neighborhood actually knows.”</text>
+  </g>
+
+  <!-- Gap matrix -->
+  <text x="40" y="344" font-size="13" fill="#a5673f" font-family="'Consolas', monospace">01</text>
+  <text x="70" y="346" font-size="20" font-weight="700" fill="#2c1e15">Competitive Gap Analysis</text>
+  <g font-family="'Trebuchet MS', sans-serif" font-size="12">
+    <!-- header row -->
+    <rect x="40" y="360" width="840" height="34" fill="#f3e7d6"/>
+    <text x="54" y="382" font-weight="700" fill="#8a7563">Capability</text>
+    <text x="360" y="382" font-weight="700" fill="#2c1e15">Meridian (you)</text>
+    <text x="520" y="382" font-weight="700" fill="#8a7563">Fathom</text>
+    <text x="640" y="382" font-weight="700" fill="#8a7563">Ember &amp; Oak</text>
+    <text x="770" y="382" font-weight="700" fill="#8a7563">Copper Kettle</text>
+    <line x1="352" y1="360" x2="352" y2="524" stroke="#a5673f" stroke-width="2"/>
+
+    <!-- rows helper: pills -->
+    <!-- row 1 -->
+    <text x="54" y="416" fill="#2c1e15" font-family="Georgia, serif">Online subscription / DTC</text>
+    <rect x="360" y="404" width="70" height="20" rx="10" fill="#f6e3de"/><text x="395" y="418" text-anchor="middle" fill="#8a2a20" font-weight="700">None</text>
+    <rect x="500" y="404" width="70" height="20" rx="10" fill="#eaf0dc"/><text x="535" y="418" text-anchor="middle" fill="#46602c" font-weight="700">Have</text>
+    <rect x="628" y="404" width="70" height="20" rx="10" fill="#eaf0dc"/><text x="663" y="418" text-anchor="middle" fill="#46602c" font-weight="700">Have</text>
+    <rect x="762" y="404" width="70" height="20" rx="10" fill="#f6ecd6"/><text x="797" y="418" text-anchor="middle" fill="#7a5710" font-weight="700">Partial</text>
+    <line x1="40" y1="432" x2="880" y2="432" stroke="#e7dccb"/>
+
+    <!-- row 2 -->
+    <text x="54" y="452" fill="#2c1e15" font-family="Georgia, serif">Content &amp; SEO (brew guides)</text>
+    <rect x="360" y="440" width="70" height="20" rx="10" fill="#f6e3de"/><text x="395" y="454" text-anchor="middle" fill="#8a2a20" font-weight="700">None</text>
+    <rect x="500" y="440" width="70" height="20" rx="10" fill="#eaf0dc"/><text x="535" y="454" text-anchor="middle" fill="#46602c" font-weight="700">Have</text>
+    <rect x="628" y="440" width="70" height="20" rx="10" fill="#f6ecd6"/><text x="663" y="454" text-anchor="middle" fill="#7a5710" font-weight="700">Partial</text>
+    <rect x="762" y="440" width="70" height="20" rx="10" fill="#eaf0dc"/><text x="797" y="454" text-anchor="middle" fill="#46602c" font-weight="700">Have</text>
+    <line x1="40" y1="468" x2="880" y2="468" stroke="#e7dccb"/>
+
+    <!-- row 3 -->
+    <text x="54" y="488" fill="#2c1e15" font-family="Georgia, serif">Loyalty / rewards program</text>
+    <rect x="360" y="476" width="70" height="20" rx="10" fill="#f6ecd6"/><text x="395" y="490" text-anchor="middle" fill="#7a5710" font-weight="700">Partial</text>
+    <rect x="500" y="476" width="70" height="20" rx="10" fill="#eaf0dc"/><text x="535" y="490" text-anchor="middle" fill="#46602c" font-weight="700">Have</text>
+    <rect x="628" y="476" width="70" height="20" rx="10" fill="#f6e3de"/><text x="663" y="490" text-anchor="middle" fill="#8a2a20" font-weight="700">None</text>
+    <rect x="762" y="476" width="70" height="20" rx="10" fill="#eaf0dc"/><text x="797" y="490" text-anchor="middle" fill="#46602c" font-weight="700">Have</text>
+    <line x1="40" y1="504" x2="880" y2="504" stroke="#e7dccb"/>
+
+    <!-- row 4 -->
+    <text x="54" y="524" fill="#2c1e15" font-family="Georgia, serif">Wholesale / B2B page</text>
+    <rect x="360" y="512" width="70" height="20" rx="10" fill="#f6e3de"/><text x="395" y="526" text-anchor="middle" fill="#8a2a20" font-weight="700">None</text>
+    <rect x="500" y="512" width="70" height="20" rx="10" fill="#f6ecd6"/><text x="535" y="526" text-anchor="middle" fill="#7a5710" font-weight="700">Partial</text>
+    <rect x="628" y="512" width="70" height="20" rx="10" fill="#eaf0dc"/><text x="663" y="526" text-anchor="middle" fill="#46602c" font-weight="700">Have</text>
+    <rect x="762" y="512" width="70" height="20" rx="10" fill="#eaf0dc"/><text x="797" y="526" text-anchor="middle" fill="#46602c" font-weight="700">Have</text>
+  </g>
+  <!-- legend -->
+  <g font-family="'Trebuchet MS', sans-serif" font-size="11.5" fill="#8a7563">
+    <circle cx="46" cy="546" r="5" fill="#b23a2e"/><text x="58" y="550">None — not offered</text>
+    <circle cx="196" cy="546" r="5" fill="#b3801b"/><text x="208" y="550">Partial — underbuilt</text>
+    <circle cx="356" cy="546" r="5" fill="#5c7a3a"/><text x="368" y="550">Have — established</text>
+  </g>
+
+  <!-- Campaign card -->
+  <text x="40" y="590" font-size="13" fill="#a5673f" font-family="'Consolas', monospace">03</text>
+  <text x="70" y="592" font-size="20" font-weight="700" fill="#2c1e15">Ready-to-Post Campaign</text>
+  <rect x="600" y="576" width="280" height="24" rx="12" fill="#f6ecd6" stroke="#e6d3a3"/>
+  <circle cx="618" cy="588" r="4" fill="#b3801b"/>
+  <text x="630" y="592" font-size="11" font-weight="700" letter-spacing="1.5" fill="#7a5710" font-family="'Trebuchet MS', sans-serif">DRAFTS · REVIEW BEFORE SENDING</text>
+
+  <!-- email card -->
+  <rect x="40" y="606" width="500" height="58" rx="10" fill="#fffdf8" stroke="#e7dccb"/>
+  <text x="56" y="626" font-size="10.5" font-weight="700" letter-spacing="1.5" fill="#8a7563" font-family="'Trebuchet MS', sans-serif">MARKETING EMAIL · SUBJECT</text>
+  <text x="56" y="648" font-size="15" font-weight="700" fill="#2c1e15">The Asheville roaster that shows you the farm</text>
+
+  <!-- social snippet cards -->
+  <rect x="556" y="606" width="150" height="58" rx="10" fill="#fffdf8" stroke="#e7dccb"/>
+  <text x="570" y="624" font-size="11.5" font-weight="700" fill="#2c1e15" font-family="'Trebuchet MS', sans-serif">LinkedIn</text>
+  <text x="570" y="642" font-size="10.5" fill="#5a4433" font-family="'Trebuchet MS', sans-serif">Farm-level transparency,</text>
+  <text x="570" y="655" font-size="10.5" fill="#5a4433" font-family="'Trebuchet MS', sans-serif">now shipped to your door…</text>
+
+  <rect x="722" y="606" width="158" height="58" rx="10" fill="#fffdf8" stroke="#e7dccb"/>
+  <text x="736" y="624" font-size="11.5" font-weight="700" fill="#2c1e15" font-family="'Trebuchet MS', sans-serif">Instagram</text>
+  <text x="736" y="642" font-size="9.5" fill="#7a4a2b" font-family="'Consolas', monospace">#SingleOrigin</text>
+  <text x="736" y="655" font-size="9.5" fill="#7a4a2b" font-family="'Consolas', monospace">#AshevilleCoffee</text>
+</svg>
